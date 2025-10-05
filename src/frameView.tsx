@@ -4,14 +4,17 @@ import performance from 'react-native-performance';
 
 const FrameView = () => {
   const [running, setRunning] = useState(false);
-  const fpsRef = useRef(0);
+  // const fpsRef = useRef(0);
   const lastTime = useRef(Date.now());
   const animations = useRef([...Array(100)].map(() => new Animated.Value(0)));
+  const [fpsAvg, setFpsAvg] = useState(0);
 
   const startTest = async () => {
     setRunning(true);
-    fpsRef.current = 0;
+    // fpsRef.current = 0;
     lastTime.current = Date.now();
+    let frameCount = 0;
+    let fpsSum = 0;
 
     animations.current.forEach(anim => {
       Animated.loop(
@@ -26,7 +29,10 @@ const FrameView = () => {
       const now = Date.now();
       const delta = now - lastTime.current;
       lastTime.current = now;
-      fpsRef.current = 1000 / delta;
+
+      const fps = 1000 / delta;
+      fpsSum += fps;
+      frameCount++;
 
       if (running) requestAnimationFrame(measureFrame);
     };
@@ -34,15 +40,20 @@ const FrameView = () => {
 
     setTimeout(async () => {
       setRunning(false);
-      console.log('FPS médio final aproximado:', fpsRef.current);
-    }, 10000); // 10s de teste
+
+      console.log(`teste: soma ${fpsSum}; contador ${frameCount} `)
+
+      const avgFps = fpsSum / frameCount;
+      setFpsAvg(avgFps);
+      console.log('FPS médio final:', avgFps.toFixed(2));
+    }, 10000);
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      <Text style={{ color: '#fff', fontSize: 20, marginTop: 20 }}>FPS: {Math.round(fpsRef.current)}</Text>
+      <Text style={{ color: '#fff', fontSize: 20, marginTop: 20, marginLeft: 15 }}>FPS: {Math.round(fpsAvg)}</Text>
 
-      <TouchableOpacity onPress={() => startTest()}>
+      <TouchableOpacity style={{marginLeft: 15}} onPress={() => startTest()}>
         <Text style={{ color: '#fff' }}>
             {running ? 'Testando...' : 'Iniciar Teste FPS'}
         </Text>
@@ -54,6 +65,7 @@ const FrameView = () => {
           style={{
             width: 20,
             height: 20,
+            marginLeft: 15,
             backgroundColor: anim.interpolate({
               inputRange: [0, 1],
               outputRange: ['red', 'yellow'],
